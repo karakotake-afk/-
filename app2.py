@@ -26,7 +26,7 @@ def save_data(df):
 
 
 # ページの基本設定
-st.set_page_config(page_title="Web会計管理ソフト", layout="wide")
+st.set_page_config(page_title="石井十次に学ぶ会2026年度会計", layout="wide")
 
 # ------------------------------------
 # ★ カスタムCSSによる文字サイズ拡大設定
@@ -34,40 +34,39 @@ st.set_page_config(page_title="Web会計管理ソフト", layout="wide")
 st.markdown(
     """
     <style>
-    /* 1. 入力項目の見出しラベル（「収支区分」「日付」など） */
+    /* 1. 入力項目の見出しラベル */
     .stWidgetLabel, label, div[data-testid="stWidgetLabel"] p {
         font-size: 1.25rem !important;
         font-weight: 600 !important;
     }
 
-    /* 2. 入力ボックス内部のテキスト（文字・数字・日付入力欄） */
+    /* 2. 入力ボックス内部のテキスト */
     input {
         font-size: 1.2rem !important;
         height: 2.8rem !important;
     }
 
-    /* 3. ドロップダウン（セレクトボックス）内のテキスト */
+    /* 3. ドロップダウン内のテキスト */
     div[data-baseweb="select"] {
         font-size: 1.2rem !important;
     }
 
-    /* 4. ラジオボタンの選択肢（「収入」「支出」） */
+    /* 4. ラジオボタンの選択肢 */
     div[role="radiogroup"] label p {
         font-size: 1.2rem !important;
     }
 
-    /* 5. 「登録する」ボタンのテキスト */
-    div[data-testid="stFormSubmitButton"] button {
-        font-size: 1.3rem !important;
+    /* 5. ボタンのテキスト */
+    div[data-testid="stFormSubmitButton"] button, div.stButton > button {
+        font-size: 1.2rem !important;
         font-weight: bold !important;
-        padding: 0.6rem 2rem !important;
     }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-st.title("💰 Webベース 会計管理アプリ")
+st.title("石井十次に学ぶ会2026年度会計")
 
 # アプリ起動時にCSVファイルからデータを自動読み込み
 if "data" not in st.session_state:
@@ -86,16 +85,11 @@ with st.form("accounting_form", clear_on_submit=True):
     trans_date = st.date_input("日付", datetime.now())
 
     category_options = [
-        "売上",
-        "給与収入",
+        
         "雑収入",
-        "仕入",
         "旅費交通費",
         "通信費",
         "消耗品費",
-        "接待交際費",
-        "水道光熱費",
-        "地代家賃",
         "雑費",
         "その他（手入力）",
     ]
@@ -133,6 +127,7 @@ if submit_button:
     save_data(st.session_state.data)
 
     st.success("登録し、CSVファイルに保存しました！")
+    st.rerun()
   else:
     st.warning("金額を入力してください。")
 
@@ -165,12 +160,41 @@ col_bal.metric(
 )
 
 # ------------------------------------
-# 3. 履歴の確認・項目別集計・ダウンロード
+# 3. 履歴の確認・データの削除・ダウンロード
 # ------------------------------------
 st.subheader("📋 入力履歴一覧")
 if not df.empty:
   st.dataframe(df, use_container_width=True)
 
+  # ★ 🗑️ データの削除機能
+  with st.expander("🗑️ 誤入力したデータを削除する"):
+    # 選択肢用のリストを作成
+    options = {
+        i: (
+            f"[{i}] {df.loc[i, '日付']} | {df.loc[i, '区分']} |"
+            f" {df.loc[i, '項目名']} | {df.loc[i, '金額']:,}円"
+            f" ({df.loc[i, '備考(領収書番号等)']})"
+        )
+        for i in df.index
+    }
+    selected_indices = st.multiselect(
+        "削除したいデータを選択してください（複数選択可能）",
+        options=list(options.keys()),
+        format_func=lambda x: options[x],
+    )
+
+    if st.button("選択したデータを削除する", type="primary"):
+      if selected_indices:
+        # 選択された行を削除
+        st.session_state.data = df.drop(selected_indices).reset_index(drop=True)
+        # CSVファイルを上書き保存
+        save_data(st.session_state.data)
+        st.success("選択したデータを削除しました！")
+        st.rerun()
+      else:
+        st.warning("削除するデータを選択してください。")
+
+  # 💡 項目ごとの小計
   with st.expander("💡 項目ごとの合計金額を見る"):
     summary_df = (
         df.groupby(["区分", "項目名"])["金額"]
