@@ -3,7 +3,7 @@ import os
 import pandas as pd
 import streamlit as st
 
-# 自動保存先のCSVファイル名
+# 自動保存先のCSVファイル名（ローカル動作時用）
 CSV_FILE = "accounting_data.csv"
 
 
@@ -11,7 +11,6 @@ CSV_FILE = "accounting_data.csv"
 # CSVの読み込み・書き出し（保存）関数
 # ------------------------------------
 def load_data():
-  """CSVファイルが存在すれば読み込み、なければ空のデータを作成"""
   if os.path.exists(CSV_FILE):
     return pd.read_csv(CSV_FILE, dtype={"備考(領収書番号等)": str})
   else:
@@ -21,9 +20,7 @@ def load_data():
 
 
 def save_data(df):
-  """データフレームをCSVファイルに自動書き出し（保存）"""
   df.to_csv(CSV_FILE, index=False, encoding="utf-8-sig")
-
 
 # ページの基本設定
 st.set_page_config(page_title="石井十次に学ぶ会2026年度会計", layout="wide")
